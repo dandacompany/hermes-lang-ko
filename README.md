@@ -8,7 +8,7 @@
 
 Hermes already ships Korean for the CLI and messaging gateway (`locales/ko.yaml`) and for the TUI (`ko.tui.yaml`). The Desktop app is the one surface without Korean. This pack fills only that gap with `locales/ko.desktop.yaml`, and leaves the bundled Korean catalogs in charge of everything else.
 
-It is a text-only language pack: two YAML files, a `plugin.yaml`, and an `__init__.py` whose `register()` does nothing (see below). The Hermes backend serves the strings to Desktop over `i18n.catalog`, where they are merged over the bundled English catalog. Any string the pack does not cover stays in English.
+The backend serves the text catalogs over `i18n.catalog`. An optional `desktop/plugin.js` companion uses only the public `ctx.i18n.registerAppLocale` SDK to add Korean introductions, placeholder arrays, and conditional messages that text catalogs cannot express. Existing YAML translations are unchanged. Without the Desktop companion, the YAML language pack still works.
 
 ## Requirements
 
@@ -53,15 +53,17 @@ hermes config get display.language   # ko
 
 Checked against [v0.22.5](https://github.com/NousResearch/hermes-agent/releases/tag/v0.22.5) and [main `cb757fac59`](https://github.com/NousResearch/hermes-agent/commit/cb757fac59c92b49e9b8f2910e5cd7ab75efffdd) on 2026-10-23. Version 0.2.4 adds 349 translations for the catalog, subagent routing, usage and billing, chat commands and recovery messages, and updates four existing strings whose English source changed. The file contains 5,373 entries, including 91 legacy keys retained for older Hermes versions; newer versions ignore those keys.
 
-The remaining 102 keys split in two. 69 need no translation: brand names, identifiers, example URLs and pure placeholders such as `{0} · {1}`. The other 33 require conditional wording, optional fragments, or array/object values that the text-only pack cannot express faithfully. Examples include on/off labels, optional reset times and rotating composer placeholders. Those keep their English wording until Desktop supports a richer override or ships Korean itself. Values identical to English are deliberately left out, so they follow the current English catalog. Desktop entries whose English value is a function are written as positional strings (`"{0}분 전"`), as the pack format requires.
+The YAML coverage above remains unchanged. The optional Desktop companion supplements 30 previously uncovered base-catalog leaves (arrays and functions), plus 15 stock introduction arrays containing 75 messages. It does not override entries already supplied by the YAML catalog. Some omitted base keys are brands, identifiers or other values that do not need translation; this is not a claim of 100% screen coverage.
 
-Coverage counts the main Desktop catalog, not every visible string. For example, `Add context` is still hardcoded in upstream `apps/desktop/src/app/chat/use-chat-bar-state.ts`, and plugin-specific interfaces use their own catalogs; this language pack cannot override those.
+After installing, enable this plugin's **Desktop** switch in its plugin details, select Korean, and restart Desktop. Builds without `ctx.i18n.registerAppLocale` skip the companion and keep the YAML pack. Stock introductions require a build that consumes `intro.stock`; tested against Hermes commit `e04614af7bb4e982b76e5256f5ec207198e0641e`.
+
+**Known limitation:** the companion registers Korean composer placeholder arrays but does not fix a host hook that stores an English placeholder before locale registration. On affected builds, the initial hint may stay English until the host selects another hint. This needs an upstream Hermes fix. The plugin does not replace renderer files or patch internal state to work around it. `CONNECTING`, hardcoded `Add context`, and third-party plugin UI are unchanged.
 
 `locales/ko.yaml` is intentionally empty: the bundled core catalog already covers it, and the validator requires the file to exist.
 
 ## What this plugin does and does not do
 
-- No executable code: `__init__.py` holds only a `register()` that returns immediately. It exists because Desktop's *Install from Git* check requires it beside `plugin.yaml`; the backend registers `locales/` from the manifest before `register()` runs. No JavaScript, no network access, no shell commands, no background processes, no stored credentials.
+- The Python `register()` remains a no-op. The Desktop companion executes readable JavaScript solely to register locale values through the public SDK (Software Development Kit). No network calls, shell commands, filesystem access, credential access, background processes, self-updater, DOM rewriting, or internal Hermes imports. Registration is attributed to the plugin and disposed by Hermes on unload.
 - Registering the pack never changes `display.language`. You opt in with `hermes config set display.language ko`.
 - The install scanner reports `caution` findings for a few UI strings that mention `sudo` passwords or show the official one-line installer command. They are display text copied from the English catalog's meaning, not executable content.
 
@@ -89,3 +91,7 @@ Releases up to 0.1.1 were generated from the Korean Desktop locale in [NousResea
 
 ---
 Built by [Dante Labs](https://dante-labs.com) · [YouTube @dante-labs](https://youtube.com/@dante-labs) · [dante@dante-labs.com](mailto:dante@dante-labs.com) · [Discord](https://discord.com/invite/rXyy5e9ujs) · [Buy Me a Coffee](https://buymeacoffee.com/dante.labs)
+
+## Companion tests
+
+Run `node --test tests/desktop.test.mjs` with Node.js 22 or later. The dependency-free tests cover conditional branches, null/optional arguments, literal custom names, arrays, YAML non-overlap, and the older-SDK fallback. Integration with the real Hermes locale registry was also checked in both registration orders.

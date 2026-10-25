@@ -9,3 +9,5 @@ Releases up to and including 0.1.1 were instead generated from the Korean Deskto
 catalog proposed in NousResearch/hermes-agent pull request #40716 by @dalgme and
 contributors (MIT License). Those releases keep that attribution. Starting with
 0.2.0, no strings from that catalog are included.
+
+Desktop companion translations contributed by KimDaeHwan99, prepared independently with AI assistance from the Hermes English catalog and introduction copy at e04614af7bb4e982b76e5256f5ec207198e0641e (MIT). The existing YAML translations by Dante Labs are unchanged.
